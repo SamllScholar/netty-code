@@ -124,9 +124,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     @Override
     void init(Channel channel) {
         //参数和属性设置
+
+        // 设置Channel的相关属性
         setChannelOptions(channel, options0().entrySet().toArray(newOptionArray(0)), logger);
         setAttributes(channel, attrs0().entrySet().toArray(newAttrArray(0)));
+        // 创建拦截链
         ChannelPipeline p = channel.pipeline();
+
         final EventLoopGroup currentChildGroup = childGroup;
         final ChannelHandler currentChildHandler = childHandler;
         final Entry<ChannelOption<?>, Object>[] currentChildOptions =
@@ -145,6 +149,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                     pipeline.addLast(handler);
                 }
 
+                // 异步执行
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {

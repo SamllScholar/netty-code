@@ -66,6 +66,7 @@ public class ChannelInboundHandlerAdapter extends ChannelHandlerAdapter implemen
     @Skip
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        // 这里进行真正的激活
         ctx.fireChannelActive();
     }
 

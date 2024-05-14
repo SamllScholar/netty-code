@@ -248,7 +248,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
-        final ChannelFuture regFuture = initAndRegister();//这个方法比较重要
+        // 创建可以异步执行的ChannelFuture, 里面封装了非常多的监听器
+        final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
             return regFuture;
@@ -259,7 +260,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             ChannelPromise promise = channel.newPromise();
             doBind0(regFuture, channel, localAddress, promise);
             return promise;
-        } else {
+        } else { // 如果之前的注册失败的话, 使用Promise异步重新注册, 注册完成后再执行doBind0
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
             //等着register完成来通知再执行bind
@@ -291,7 +292,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      */
     final ChannelFuture initAndRegister() {
         Channel channel = null;
-        try {
+        try { // channelFactory这个是创建ServerBootstrap时进行的赋值
             channel = channelFactory.newChannel();//  1、创建一个ServerSocketChannel(NioServerSocketChannel)
             init(channel);//2、初始化ServerSocketChannel(NioServerSocketChannel)
         } catch (Throwable t) {
@@ -304,7 +305,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
-        //3、Register:给ServerSocketChannel从Bossgroup中选择一个NioEventLoop
+
+        //3、Register:给ServerSocketChannel从BossGroup中选择一个NioEventLoop
         //这里是返回一个Future，说明后面要走异步过程了
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {

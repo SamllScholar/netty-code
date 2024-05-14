@@ -500,6 +500,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
+                //
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);//这里通知Register成功
@@ -546,9 +547,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                         "is not bound to a wildcard address; binding to a non-wildcard " +
                         "address (" + localAddress + ") anyway as requested.");
             }
-
+            // isActive这个判断的逻辑是端口是否打开并且Channel是否绑定端口, 这里是false
             boolean wasActive = isActive();
             try {
+                // 经过此步后, Channel就成功绑定端口了, 绑定成功后isActive() == true了
                 doBind(localAddress);//NioServerSocketChannel类
             } catch (Throwable t) {
                 safeSetFailure(promise, t);
@@ -557,7 +559,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
             //绑定后，才开始激活
             if (!wasActive && isActive()) {
-                invokeLater(new Runnable() {
+                invokeLater(new Runnable() { // eventLoop().execute(task); 把它添加到队列尾
                     @Override
                     public void run() {
                         pipeline.fireChannelActive();

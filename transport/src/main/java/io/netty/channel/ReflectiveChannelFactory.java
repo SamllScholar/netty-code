@@ -44,7 +44,7 @@ public class ReflectiveChannelFactory<T extends Channel> implements ChannelFacto
     //泛型T代表不同的Channel
     public T newChannel() {
         try {
-            //反射创建channel
+            //反射创建channel, 如果直接使用new的话,需要import对应的包, 而反射不需要, 这样做的好处是解耦
             return constructor.newInstance();
         } catch (Throwable t) {
             throw new ChannelException("Unable to create Channel from class " + constructor.getDeclaringClass(), t);

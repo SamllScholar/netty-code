@@ -21,7 +21,6 @@ import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2Settings;
-
 import static io.netty.handler.logging.LogLevel.INFO;
 
 public final class HelloWorldHttp2HandlerBuilder

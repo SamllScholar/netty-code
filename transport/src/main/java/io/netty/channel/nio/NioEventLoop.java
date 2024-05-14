@@ -124,6 +124,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,
                  SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
                  EventLoopTaskQueueFactory queueFactory) {
+        // 调用父类的方法创建事件执行器, EventExecutor执行的时候总共用到了三个对象, TackQueue, TailQueue, PriorityQueue这三个队列中中执行器竞争看执行那个执行器
         super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
                 rejectedExecutionHandler);
         if (selectorProvider == null) {
@@ -132,6 +133,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         if (strategy == null) {
             throw new NullPointerException("selectStrategy");
         }
+        // 赋值运行时需要的组件, netty在NioEventLoopGroup中把原来定义的参数直接复制过来了
         provider = selectorProvider;
         final SelectorTuple selectorTuple = openSelector();
         selector = selectorTuple.selector;

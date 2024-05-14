@@ -32,6 +32,7 @@ import static io.netty.util.concurrent.AbstractEventExecutor.*;
 public abstract class AbstractEventExecutorGroup implements EventExecutorGroup {
     @Override
     public Future<?> submit(Runnable task) {
+        // 当事件执行器执行的时候始终使用下一个事件执行器执行(这样做的目的是实现异步执行任务)
         return next().submit(task);
     }
 

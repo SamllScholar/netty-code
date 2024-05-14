@@ -369,7 +369,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         for (;;) {
             try {
                 logger.info("initial register： " + 0);
-                //将ServerSocketChannel 注册到选择的 NioEventLoop的Selector
+                //将ServerSocketChannel 注册到选择的 NioEventLoop的Selector, 这里的ops == 0(如果没有人修改, 那么久永远不会执行, 内核感兴趣的默认只有四个对应java中的1, 4, 8, 16, 别人修改之后久可以了)
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {

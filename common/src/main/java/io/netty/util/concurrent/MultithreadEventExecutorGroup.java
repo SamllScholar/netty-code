@@ -27,8 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Abstract base class for {@link EventExecutorGroup} implementations that handles their tasks with multiple threads at
  * the same time.
+ * 这个类定义了EventExecutorGroup的基本内容,以及个组件的关系, 这个类规定了子类的行为规范, 他的构造方法创建并定义了执行器数组,选择器,监听器关系
  */
 public abstract class MultithreadEventExecutorGroup extends AbstractEventExecutorGroup {
+    /**
+     * EventExecutor[]: 表示多个事件执行器(表示多个线程)
+     * EventExecutorChooserFactory.EventExecutorChooser: 事件执行器选择器, 表示使用哪个时间执行器执行当前的任务
+     * 当前类的主体思想: 通过chooser选择器选择一个事件执行器执行当前的任务
+     */
 
     private final EventExecutor[] children;
     private final Set<EventExecutor> readonlyChildren;
@@ -73,11 +79,13 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         }
 
         if (executor == null) {
+            // 避免子类直接调用这个构造函数(如果直接调佣的话, 是没有executor的)
             executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
         }
 
         children = new EventExecutor[nThreads];
 
+        // 初始化事件执行器
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
@@ -110,6 +118,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
 
         chooser = chooserFactory.newChooser(children);
 
+        // 创建监听器,并把监听器添加到每一个事件执行器中
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {
             @Override
             public void operationComplete(Future<Object> future) throws Exception {
@@ -123,6 +132,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             e.terminationFuture().addListener(terminationListener);
         }
 
+        // 创建一个只读副本, 不允许增删改
         Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
         Collections.addAll(childrenSet, children);
         readonlyChildren = Collections.unmodifiableSet(childrenSet);
@@ -132,6 +142,10 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         return new DefaultThreadFactory(getClass());
     }
 
+    /**
+     * 这里也是异步的思想, 让下一个选择器选择执行器
+     * @return 使用下一个选择器获取事件执行器
+     */
     @Override
     public EventExecutor next() {
         return chooser.next(); //chooser是一个选择器，一般的实现会使用策略模式

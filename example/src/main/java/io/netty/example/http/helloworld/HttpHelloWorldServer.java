@@ -33,11 +33,13 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
  */
 public final class HttpHelloWorldServer {
 
+    // 判断一下操作系统是否使用ssl
     static final boolean SSL = System.getProperty("ssl") != null;
+    // 设置server开通的端口号
     static final int PORT = Integer.parseInt(System.getProperty("port", SSL? "8443" : "8080"));
 
     public static void main(String[] args) throws Exception {
-        // Configure SSL.
+        // 进行SSL配置
         final SslContext sslCtx;
         if (SSL) {
             SelfSignedCertificate ssc = new SelfSignedCertificate();
@@ -46,17 +48,20 @@ public final class HttpHelloWorldServer {
             sslCtx = null;
         }
 
-        // Configure the server.
+        // 创建一个ServerSocketChannel, 然后把接收到的请求封装成任务分发给SocketChannel
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        // 负责处理每一个SocketChannel中的请求
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
+            // 创建启动类, 在创建的过程中会进行相关的配置
             ServerBootstrap b = new ServerBootstrap();
+            // 进行属性相关配置
             b.option(ChannelOption.SO_BACKLOG, 1024);
             b.group(bossGroup, workerGroup)
-             .channel(NioServerSocketChannel.class)
-             .handler(new LoggingHandler(LogLevel.INFO))
-             .childHandler(new HttpHelloWorldServerInitializer(sslCtx));
-
+             .channel(NioServerSocketChannel.class) // NioServerSocketChannel类创建channel
+             .handler(new LoggingHandler(LogLevel.INFO)) // 为ServerSocketChannel设置日志处理器
+             .childHandler(new HttpHelloWorldServerInitializer(sslCtx)); // 为SocketChannel进行初始化
+            // 设置端口号并取出其中的Channel
             Channel ch = b.bind(PORT).sync().channel();
 
             System.err.println("Open your web browser and navigate to " +
