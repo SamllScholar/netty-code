@@ -406,7 +406,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     /**
      * Poll all tasks from the task queue and run them via {@link Runnable#run()} method.
-     *
+     *  这里是IORatio占比为100%的情况首先执行普通的TaskQueue中的人物, 然后再执行TailQueue中的任务
      * @return {@code true} if and only if at least one task was run
      */
     protected boolean runAllTasks() {
@@ -508,6 +508,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             return false;
         }
 
+        // 计算出当前可用的时间
         final long deadline = ScheduledFutureTask.nanoTime() + timeoutNanos;
         long runTasks = 0;
         long lastExecutionTime;
@@ -518,6 +519,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
             // Check timeout every 64 tasks because nanoTime() is relatively expensive.
             // XXX: Hard-coded value - will make it configurable if it is really a problem.
+            // 如果执行任务数量大于64的话, 久判断一下是否还有剩余的时间如果有久执行接下来的任务, 如果没有久break
             if ((runTasks & 0x3F) == 0) {
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
                 if (lastExecutionTime >= deadline) {
@@ -532,6 +534,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
 
+        // 执行完所以得taskQueue中的人物后久执行Tail中的人物
         afterRunningAllTasks();
         this.lastExecutionTime = lastExecutionTime;
         return true;

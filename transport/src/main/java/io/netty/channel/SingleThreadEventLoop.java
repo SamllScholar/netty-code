@@ -144,6 +144,7 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
 
     @Override
     protected boolean hasTasks() {
+        // 判断当前的任务队列和负任务队列中是否有任务, 只要有一个有那么就代表当前有任务需要执行
         return super.hasTasks() || !tailTasks.isEmpty();
     }
 

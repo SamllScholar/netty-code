@@ -144,6 +144,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private static Queue<Runnable> newTaskQueue(
             EventLoopTaskQueueFactory queueFactory) {
         if (queueFactory == null) {
+            // 以Introduce local variable大小创建一个队列
             return newTaskQueue0(DEFAULT_MAX_PENDING_TASKS);
         }
         return queueFactory.newTaskQueue(DEFAULT_MAX_PENDING_TASKS);
@@ -438,14 +439,17 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         for (;;) {
             try {
                 try {
+                    // 判断当前的选择策略, 进而进行不同的操作, 如果当前有任务需要执行就使用select选择一个生产者执行这个任务, 如果没有的话就一直轮询等待使用
                     switch (selectStrategy.calculateStrategy(selectNowSupplier, hasTasks())) {
                     case SelectStrategy.CONTINUE:
+                        // 进行轮询
                         continue;
 
                     case SelectStrategy.BUSY_WAIT:
                         // fall-through to SELECT since the busy-wait is not supported with NIO
 
                     case SelectStrategy.SELECT:
+                        // 如果是这个策略的话(这个策略默认是没有任务时执行的策略): 那么当前的线程会先阻塞一段时间再执行
                         select(wakenUp.getAndSet(false));
 
                         // 'wakenUp.compareAndSet(false, true)' is always evaluated
@@ -490,9 +494,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     continue;
                 }
 
+                // 进行真正的执行
                 cancelledKeys = 0;
                 needsToSelectAgain = false;
+                // IO占比(Io任务在总任务重的占比, 默认50%)
                 final int ioRatio = this.ioRatio;
+                // 如果IO任务为100%那么就先执行IO任务, 再执行普通的TAsk
                 if (ioRatio == 100) {
                     try {
                         processSelectedKeys();
@@ -500,7 +507,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         // Ensure we always run tasks.
                         runAllTasks();
                     }
-                } else {
+                } else { // 如果IO任务占比不是100%, 那么就先执行一段IO, 再执行一段时间的普通IO(假如IO占比30%, 那么如果IO执行的时间为30s, 那么普通任务执行的时间就是70S就是这个意思)
                     final long ioStartTime = System.nanoTime();
                     try {
                         processSelectedKeys();
@@ -544,7 +551,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             //不用JDK的selector.selectedKeys(), 性能更好（1%-2%），垃圾回收更少
             processSelectedKeysOptimized();
         } else {
-            //JDK的selector.selectedKeys()
+            //JDK的selector.selectedKeys(), 如果selector.selectedKeys()为空那么直接返回, 如果不为空就一个死循环拿出每一个进行执行
             processSelectedKeysPlain(selector.selectedKeys());
         }
     }
@@ -601,11 +608,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 NioTask<SelectableChannel> task = (NioTask<SelectableChannel>) a;
                 processSelectedKey(k, task);
             }
-
+            // 所有的已经全部遍历完成, 那么就结束循环
             if (!i.hasNext()) {
                 break;
             }
 
+            // 是否重复select一次, 可能会有遗漏?
             if (needsToSelectAgain) {
                 selectAgain();
                 selectedKeys = selector.selectedKeys();
@@ -780,6 +788,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     int selectNow() throws IOException {
         try {
+            // 这个如果有选择就返回可以选择的数量,如果没有选择就返回0
             return selector.selectNow();
         } finally {
             // restore wakeup state if needed
